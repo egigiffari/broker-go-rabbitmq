@@ -8,5 +8,5 @@ this project require `docker` for running rabbitmq. running docker with `docker-
 ### usecase
 
 #### common
-first running publisher before consumer for init exchange and queue
+this the common usecase for rabbitqm as message queue, publisher for publish message and consumer for recieved message from publisher. for start usecase make sure you start publisher first before consumer
 
