@@ -7,8 +7,8 @@ type Config struct {
 	Port              int
 	Username          string
 	Password          string
-	MaxReconnect      int
-	ReconnectInterval int
+	MaxReconnect      int // max reconnection
+	ReconnectInterval int // interval time before reconnect (second)
 }
 
 func (c *Config) Dns() string {

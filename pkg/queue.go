@@ -3,12 +3,13 @@ package pkg
 import amqp "github.com/rabbitmq/amqp091-go"
 
 type Queue struct {
-	Name string
-	Args amqp.Table
+	Name    string
+	Durable bool
+	Args    amqp.Table
 }
 
 func (q *Queue) Declare(channel *amqp.Channel) error {
-	_, err := channel.QueueDeclare(q.Name, true, false, false, false, q.Args)
+	_, err := channel.QueueDeclare(q.Name, q.Durable, false, false, false, q.Args)
 	return err
 }
 
