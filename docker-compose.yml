@@ -6,6 +6,9 @@ services:
       context: .
     image: rabbitmq:1.0
     container_name: rabbitmq
+    volumes:
+      - ./rabbitmq/data/log:/var/log/rabbitmq
+      - ./rabbitmq/data/mnesia:/var/lib/rabbitmq/mnesia
     ports:
       - 15672:15672
       - 5672:5672
