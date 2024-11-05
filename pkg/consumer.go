@@ -14,6 +14,7 @@ type Consumer struct {
 	Name      string
 	Queue     string
 	AuthAck   bool
+	Prefetch  int
 	NumWorker int
 	RabbitMQ  *RabbitMQ
 	Handler   MessageHandler
@@ -63,6 +64,10 @@ func (c *Consumer) Messages(ctx context.Context) (<-chan amqp.Delivery, error) {
 
 	channel, err := connection.Channel()
 	if err != nil {
+		return nil, err
+	}
+
+	if err := channel.Qos(c.Prefetch, 0, false); err != nil {
 		return nil, err
 	}
 

@@ -44,7 +44,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go rabbitMQ.Reconnect(ctx)
+	go rabbitMQ.Reconnect(ctx, cancel)
 	go consumer.Listen(ctx, &wg)
 
 	<-ctx.Done()
@@ -87,6 +87,7 @@ func getConsumer(rabbitmq *pkg.RabbitMQ) *pkg.Consumer {
 		Queue:     QUEUE,
 		AuthAck:   true,
 		NumWorker: 1,
+		Prefetch:  50,
 		RabbitMQ:  rabbitmq,
 		Handler: func(message amqp.Delivery) {
 			fmt.Printf("recieved message: %s\n", string(message.Body))
