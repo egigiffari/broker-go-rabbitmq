@@ -7,14 +7,9 @@ import (
 	"sync"
 	"syscall"
 
+	common "github.com/egigiffari/broker-go-rabbitmq/delayed-message"
 	"github.com/egigiffari/broker-go-rabbitmq/pkg"
 	amqp "github.com/rabbitmq/amqp091-go"
-)
-
-const (
-	EXCHANGE = "sample-delayed-exchange"
-	QUEUE    = "sample-queue"
-	CONSUMER = "sample-consumer"
 )
 
 func main() {
@@ -22,18 +17,8 @@ func main() {
 	defer cancel()
 	rabbitMQ := getMQ()
 
-	connection, err := rabbitMQ.Connection()
-	if err != nil {
-		panic(fmt.Errorf("rabbitmq failed to connect err: %s", err.Error()))
-	}
-
-	channel, err := connection.Channel()
-	if err != nil {
-		panic(fmt.Errorf("rabbitmq channel not response err: %s", err.Error()))
-	}
-
-	if err := prepareQueue(channel); err != nil {
-		panic(fmt.Errorf("rabbitmq failed declare queue err: %s", err.Error()))
+	if err := common.Boot(rabbitMQ); err != nil {
+		panic(err)
 	}
 
 	fmt.Println("====================")
@@ -44,7 +29,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go rabbitMQ.Reconnect(ctx)
+	go rabbitMQ.Reconnect(ctx, cancel)
 	go consumer.Listen(ctx, &wg)
 
 	<-ctx.Done()
@@ -69,7 +54,7 @@ func getMQ() *pkg.RabbitMQ {
 
 func prepareQueue(channel *amqp.Channel) error {
 	queue := pkg.Queue{
-		Name:    QUEUE,
+		Name:    common.QUEUE,
 		Durable: true,
 		Args:    amqp.Table{},
 	}
@@ -78,13 +63,13 @@ func prepareQueue(channel *amqp.Channel) error {
 		return err
 	}
 
-	return queue.BindOnExchange(channel, "", EXCHANGE, amqp.Table{})
+	return queue.BindOnExchange(channel, "", common.EVENT, amqp.Table{})
 }
 
 func getConsumer(rabbitmq *pkg.RabbitMQ) *pkg.Consumer {
 	return &pkg.Consumer{
-		Name:      CONSUMER,
-		Queue:     QUEUE,
+		Name:      common.CONSUMER,
+		Queue:     common.QUEUE,
 		AuthAck:   true,
 		NumWorker: 1,
 		RabbitMQ:  rabbitmq,
