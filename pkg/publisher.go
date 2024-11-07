@@ -48,6 +48,10 @@ func (p *Publisher) openChannel() (*amqp.Channel, error) {
 		return nil, err
 	}
 
+	if err := newChannel.Confirm(p.ConfirmNoWait); err != nil {
+		return nil, err
+	}
+
 	p.channel = newChannel
 	return p.channel, nil
 }
