@@ -6,28 +6,24 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/egigiffari/broker-go-rabbitmq/common"
 	"github.com/egigiffari/broker-go-rabbitmq/pkg"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
-
-const EXCHANGE = "sample-exchange"
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.TODO(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 	rabbitMQ := getMQ()
-	connection, err := rabbitMQ.Connection()
-	if err != nil {
-		panic(fmt.Errorf("rabbitmq failed to connect err: %s", err.Error()))
-	}
-	defer connection.Close()
 
-	exchange, err := prepareExchange(rabbitMQ)
-	if err != nil {
-		panic(fmt.Errorf("rabbitmq failed declare exchange err: %s", err.Error()))
+	if err := common.Boot(rabbitMQ); err != nil {
+		panic(err)
 	}
 
-	go rabbitMQ.Reconnect(ctx)
+	publisher := preparePublisher(rabbitMQ)
+
+	go rabbitMQ.Reconnect(ctx, cancel)
+
 	var message string
 	fmt.Println("====================")
 	fmt.Println("Publish your message")
@@ -44,7 +40,7 @@ func main() {
 				continue
 			}
 
-			exchange.Publish(ctx, "", false, false, amqp.Publishing{
+			publisher.Publish(ctx, common.KEY, amqp.Publishing{
 				Body:         []byte(message),
 				DeliveryMode: amqp.Persistent,
 			})
@@ -66,18 +62,12 @@ func getMQ() *pkg.RabbitMQ {
 	return pkg.NewRabbitMQ(&config)
 }
 
-func prepareExchange(rabbitMQ *pkg.RabbitMQ) (*pkg.Exchange, error) {
-	exchange := pkg.Exchange{
-		Name:     EXCHANGE,
-		Kind:     amqp.ExchangeDirect,
-		Durable:  true,
-		Args:     amqp.Table{},
-		RabbitMQ: rabbitMQ,
+func preparePublisher(rabbitMQ *pkg.RabbitMQ) *pkg.Publisher {
+	publisher := pkg.Publisher{
+		EventName:     common.EVENT,
+		ConfirmNoWait: false,
+		MQ:            rabbitMQ,
 	}
 
-	if err := exchange.Declare(); err != nil {
-		return nil, err
-	}
-
-	return &exchange, nil
+	return &publisher
 }
