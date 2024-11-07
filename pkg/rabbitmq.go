@@ -42,7 +42,7 @@ func (r *RabbitMQ) Connect() (*amqp.Connection, error) {
 	return r.connection, nil
 }
 
-func (r *RabbitMQ) Reconnect(ctx context.Context) {
+func (r *RabbitMQ) Reconnect(ctx context.Context, stop context.CancelFunc) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -53,6 +53,7 @@ func (r *RabbitMQ) Reconnect(ctx context.Context) {
 			for {
 				if r.attemptReconnect > r.config.MaxReconnect {
 					fmt.Println("rabbitmq has reached max reconnect attempt")
+					stop()
 					return
 				}
 
